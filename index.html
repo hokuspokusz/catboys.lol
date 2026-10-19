@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>alprxzolam</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="assets/gengar.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg style="position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none;" aria-hidden="true">
+    <defs>
+        <mask id="discord-mask-idle">
+            <circle cx="12" cy="12" r="12" fill="white" />
+            <circle cx="6" cy="6" r="9" fill="black" />
+        </mask>
+
+        <mask id="discord-mask-dnd">
+            <circle cx="12" cy="12" r="12" fill="white" />
+            <rect x="3" y="9" width="18" height="6" rx="3" fill="black" />
+        </mask>
+>
+        <mask id="discord-mask-offline">
+            <circle cx="12" cy="12" r="12" fill="white" />
+            <circle cx="12" cy="12" r="6" fill="black" />
+        </mask>
+
+        <mask id="discord-mask-streaming">
+            <circle cx="12" cy="12" r="12" fill="white" />
+            <polygon points="8.4,6 18.8,12 8.4,18" fill="black" />
+        </mask>
+
+        <mask id="discord-mask-mobile">
+            <rect width="18" height="24" rx="3.375" ry="3" fill="white" />
+            <rect x="2.25" y="4" width="13.5" height="12" rx="1.5" ry="1.5" fill="black" />
+            <ellipse cx="9" cy="20" rx="2.25" ry="2" fill="black" />
+        </mask>
+    </defs>
+</svg>
+
+<div id="enter-screen">
+    <div id="enter-text">click to enter</div>
+</div>
+
+<audio id="audio">
+    <source src="assets/music.mp3" type="audio/mpeg">
+</audio>
+
+<div class="background">
+    <img src="assets/background.jpg" class="background-gif" alt="background">
+</div>
+
+<main class="layout">
+
+    <div class="card profile-card">
+        
+        <div class="pfp">
+            <img id="profile-pfp" src="https://cdn.discordapp.com/avatars/617096967188643855/e72610f27f177569864cc1dff1ee52e1.png?size=512" alt="pfp">
+            <div id="status-dot" class="status-dot">
+                <svg viewBox="0 0 24 24" class="status-svg" aria-label="Offline">
+                    <mask id="discord-mask-offline">
+                        <circle cx="12" cy="12" r="12" fill="white" />
+                        <circle cx="12" cy="12" r="6" fill="black" />
+                    </mask>
+                    <circle cx="12" cy="12" r="12" fill="#80848e" mask="url(#discord-mask-offline)" />
+                </svg>
+            </div>
+        </div>
+
+        <div id="activity-bubble" class="activity-bubble" style="display: none;">
+            <div id="bubble-icon" class="bubble-icon"></div>
+            <span id="bubble-text" class="bubble-text"></span>
+        </div>
+
+        <div class="username">
+            <span class="username-text">alprxzolam</span>
+        </div>
+
+        <div class="description">
+            <span class="description-text">life is roblox</span>
+        </div>
+
+        <div class="social-buttons">
+            <a href="https://github.com/hokuspokusz" target="_blank"><i class="fab fa-github"></i></a>
+            <a href="https://web.telegram.org/k/#@hokuspokusz" target="_blank"><i class="fab fa-telegram"></i></a>
+            <a href="https://www.instagram.com/0x254fe70" target="_blank"><i class="fab fa-instagram"></i></a>
+        </div>
+    </div>
+
+    <div class="card small-card">
+        <a href="https://www.youtube.com/@gothb0icl1qu3" class="mini-button" target="_blank">
+            <i class="fab fa-youtube"></i><span>YouTube</span>
+        </a>
+    </div>
+
+    <a href="https://discord.gg/6fCvDy4YfT" class="card big-button" target="_blank">
+        <img src="assets/spin-haunter.gif" class="card-gif">
+        <span class="card-text">Best GeoGuessr Script</span>
+        <img src="assets/spin-haunter.gif" class="card-gif">
+    </a>
+
+    <div class="card">
+        <div class="music-player">
+            <div class="music-player-left">
+                <img src="assets/cover.jpg" class="track-cover" alt="track cover">
+                <span class="track-left">tears - Lil Peep</span>
+            </div>
+            <button id="playBtn"><i class="fa-solid fa-play"></i></button>
+        </div>
+    </div>
+
+</main>
+
+<script>
+const USER_ID = '617096967188643855';
+
+const discordColors = {
+    online: '#23a55a',
+    idle: '#f0b232',
+    dnd: '#f23f43',
+    offline: '#80848e',
+    streaming: '#593695'
+};
+
+let latestLanyardUser = null;
+
+function renderDiscordStatus(user) {
+    const statusDot = document.getElementById('status-dot');
+    if (!statusDot) return;
+
+    const status = (user && user.discord_status) ? user.discord_status : 'offline';
+    const isStreaming = Boolean(user && user.activities && user.activities.some(a => a.type === 1));
+    const isMobile = Boolean(
+        user &&
+        user.active_on_discord_mobile &&
+        !user.active_on_discord_desktop &&
+        !user.active_on_discord_web &&
+        status !== 'offline'
+    );
+
+    const statusKey = `${status}_${isStreaming}_${isMobile}`;
+    if (statusDot.dataset.statusKey === statusKey) return;
+    statusDot.dataset.statusKey = statusKey;
+
+    statusDot.style.backgroundColor = '';
+
+    if (isMobile) {
+        statusDot.classList.add('status-mobile');
+    } else {
+        statusDot.classList.remove('status-mobile');
+    }
+
+    if (isStreaming) {
+        statusDot.innerHTML = `
+            <svg viewBox="0 0 24 24" class="status-svg" aria-label="Streaming">
+                <mask id="discord-mask-streaming">
+                    <circle cx="12" cy="12" r="12" fill="white" />
+                    <polygon points="8.4,6 18.8,12 8.4,18" fill="black" />
+                </mask>
+                <circle cx="12" cy="12" r="12" fill="${discordColors.streaming}" mask="url(#discord-mask-streaming)" />
+            </svg>`;
+    } else if (isMobile) {
+        const mobileColor = discordColors[status] || discordColors.online;
+        statusDot.innerHTML = `
+            <svg viewBox="0 0 18 24" class="status-svg" aria-label="Mobile ${status}">
+                <mask id="discord-mask-mobile">
+                    <rect width="18" height="24" rx="3.375" ry="3" fill="white" />
+                    <rect x="2.25" y="4" width="13.5" height="12" rx="1.5" ry="1.5" fill="black" />
+                    <ellipse cx="9" cy="20" rx="2.25" ry="2" fill="black" />
+                </mask>
+                <rect width="18" height="24" rx="3.375" ry="3" fill="${mobileColor}" mask="url(#discord-mask-mobile)" />
+            </svg>`;
+    } else if (status === 'online') {
+        statusDot.innerHTML = `
+            <svg viewBox="0 0 24 24" class="status-svg" aria-label="Online">
+                <circle cx="12" cy="12" r="12" fill="${discordColors.online}" />
+            </svg>`;
+    } else if (status === 'idle') {
+        statusDot.innerHTML = `
+            <svg viewBox="0 0 24 24" class="status-svg" aria-label="Idle">
+                <mask id="discord-mask-idle">
+                    <circle cx="12" cy="12" r="12" fill="white" />
+                    <circle cx="6" cy="6" r="9" fill="black" />
+                </mask>
+                <circle cx="12" cy="12" r="12" fill="${discordColors.idle}" mask="url(#discord-mask-idle)" />
+            </svg>`;
+    } else if (status === 'dnd') {
+        statusDot.innerHTML = `
+            <svg viewBox="0 0 24 24" class="status-svg" aria-label="Do Not Disturb">
+                <mask id="discord-mask-dnd">
+                    <circle cx="12" cy="12" r="12" fill="white" />
+                    <rect x="3" y="9" width="18" height="6" rx="3" fill="black" />
+                </mask>
+                <circle cx="12" cy="12" r="12" fill="${discordColors.dnd}" mask="url(#discord-mask-dnd)" />
+            </svg>`;
+    } else {
+        statusDot.innerHTML = `
+            <svg viewBox="0 0 24 24" class="status-svg" aria-label="Offline">
+                <mask id="discord-mask-offline">
+                    <circle cx="12" cy="12" r="12" fill="white" />
+                    <circle cx="12" cy="12" r="6" fill="black" />
+                </mask>
+                <circle cx="12" cy="12" r="12" fill="${discordColors.offline}" mask="url(#discord-mask-offline)" />
+            </svg>`;
+    }
+}
+
+function updateActivityBubble() {
+    const bubble = document.getElementById('activity-bubble');
+    const bubbleIcon = document.getElementById('bubble-icon');
+    const bubbleText = document.getElementById('bubble-text');
+    const audio = document.getElementById('audio');
+
+    const user = latestLanyardUser;
+
+    renderDiscordStatus(user);
+
+    if (!bubble || !bubbleIcon || !bubbleText) return;
+
+    const activities = (user && user.activities) ? user.activities : [];
+
+    const game = activities.find(a => a.type !== 4 && a.type !== 2 && a.name !== 'Spotify');
+
+    let song = null;
+    if (user && user.listening_to_spotify && user.spotify && user.spotify.song) {
+        song = user.spotify.artist ? `${user.spotify.song} - ${user.spotify.artist}` : user.spotify.song;
+    } else {
+        const musicAct = activities.find(a => a.type === 2 || a.name === 'Spotify');
+        if (musicAct) {
+            const details = musicAct.details;
+            const state = musicAct.state;
+            song = (details && state) ? `${details} - ${state}` : (details || state || musicAct.name);
+        }
+    }
+
+    if (game) {
+        bubble.style.display = 'inline-flex';
+        if (game.type === 1) {
+            bubbleIcon.style.display = 'flex';
+            bubbleIcon.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a855f7;"></i>';
+            bubbleText.innerText = `streaming ${game.name}`;
+        } else {
+            bubbleIcon.style.display = 'none';
+            bubbleIcon.innerHTML = '';
+            let text = `playing ${game.name}`;
+            if (game.timestamps && game.timestamps.start) {
+                text += ` (${formatDuration(game.timestamps.start)})`;
+            }
+            bubbleText.innerText = text;
+        }
+    } else if (song) {
+        bubble.style.display = 'inline-flex';
+        bubbleIcon.style.display = 'flex';
+        bubbleIcon.innerHTML = `
+            <div class="equalizer">
+                <span></span><span></span><span></span>
+            </div>`;
+        bubbleText.innerText = `listening to ${song}`;
+    } else if (audio && !audio.paused) {
+        bubble.style.display = 'inline-flex';
+        bubbleIcon.style.display = 'flex';
+        bubbleIcon.innerHTML = `
+            <div class="equalizer">
+                <span></span><span></span><span></span>
+            </div>`;
+        bubbleText.innerText = 'listening to Lass alles fallen - Beyazz';
+    } else {
+        const custom = activities.find(a => a.type === 4);
+        if (custom && custom.state) {
+            bubble.style.display = 'inline-flex';
+            bubbleIcon.style.display = 'none';
+            bubbleIcon.innerHTML = '';
+            bubbleText.innerText = custom.state;
+        } else {
+            bubble.style.display = 'none';
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const splash = document.getElementById("enter-screen");
+    const splashText = document.getElementById("enter-text");
+
+    const audio = document.getElementById("audio");
+    const playBtn = document.getElementById("playBtn");
+    const icon = playBtn.querySelector("i");
+
+    audio.volume = 0.5;
+
+    splash.addEventListener("click", () => {
+        splashText.style.opacity = "0";
+        splash.style.opacity = "0";
+
+        setTimeout(() => {
+            splash.style.display = "none";
+        }, 500);
+
+        audio.play().catch(e => console.log('Audio autoplay prevented:', e));
+    });
+
+    playBtn.addEventListener("click", () => {
+        if (audio.paused) {
+            audio.play().catch(e => console.log('Audio play error:', e));
+        } else {
+            audio.pause();
+        }
+    });
+
+    audio.addEventListener('play', () => {
+        icon.classList.replace("fa-play", "fa-pause");
+        updateActivityBubble();
+    });
+
+    audio.addEventListener('pause', () => {
+        icon.classList.replace("fa-pause", "fa-play");
+        updateActivityBubble();
+    });
+
+    audio.addEventListener('ended', () => {
+        icon.classList.replace("fa-pause", "fa-play");
+        updateActivityBubble();
+    });
+
+    fetchDiscordWidget();
+    initLanyardSocket();
+});
+
+function formatDuration(startTimestamp) {
+    const now = Date.now();
+    const elapsed = Math.max(0, now - startTimestamp);
+    const totalSeconds = Math.floor(elapsed / 1000);
+    const seconds = totalSeconds % 60;
+    const minutes = Math.floor(totalSeconds / 60) % 60;
+    const hours = Math.floor(totalSeconds / 3600);
+
+    const padSec = String(seconds).padStart(2, '0');
+
+    if (hours > 0) {
+        const padMin = String(minutes).padStart(2, '0');
+        return `${hours}h ${padMin}m ${padSec}s`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${padSec}s`;
+    } else {
+        return `${seconds}s`;
+    }
+}
+
+function updatePresenceUI(user) {
+    if (!user || !user.discord_user) return;
+    latestLanyardUser = user;
+
+    console.log('[Lanyard Presence Data]:', user);
+
+    const discordUser = user.discord_user;
+
+    let avatarUrl;
+    if (discordUser.avatar) {
+        const isAnimated = discordUser.avatar.startsWith('a_');
+        avatarUrl = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${isAnimated ? 'gif' : 'png'}?size=512`;
+    } else {
+        const defaultIndex = discordUser.discriminator === '0'
+            ? Number((BigInt(discordUser.id) >> 22n) % 6n)
+            : (parseInt(discordUser.discriminator, 10) % 5);
+        avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
+    }
+
+    const profilePfp = document.getElementById('profile-pfp');
+    if (profilePfp && profilePfp.src !== avatarUrl) {
+        profilePfp.src = avatarUrl;
+    }
+
+    updateActivityBubble();
+}
+
+async function fetchDiscordWidget() {
+    try {
+        const res = await fetch(`https://api.lanyard.rest/v1/users/${USER_ID}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+            updatePresenceUI(data.data);
+        }
+    } catch (err) {
+        console.error('Error fetching Lanyard status:', err);
+        renderDiscordStatus(null);
+        updateActivityBubble();
+    }
+}
+
+function initLanyardSocket() {
+    let ws;
+    let heartbeatInterval;
+
+    function connect() {
+        try {
+            ws = new WebSocket('wss://api.lanyard.rest/socket');
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                const { op, d, t } = message;
+
+                if (op === 1) {
+                    heartbeatInterval = setInterval(() => {
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ op: 3 }));
+                        }
+                    }, d.heartbeat_interval);
+
+                    ws.send(JSON.stringify({
+                        op: 2,
+                        d: { subscribe_to_id: USER_ID }
+                    }));
+                } else if (t === 'INIT_STATE' || t === 'PRESENCE_UPDATE') {
+                    updatePresenceUI(d);
+                }
+            };
+
+            ws.onclose = () => {
+                clearInterval(heartbeatInterval);
+                setTimeout(connect, 5000);
+            };
+
+            ws.onerror = () => {
+                ws.close();
+            };
+        } catch (e) {
+            console.error('Lanyard WebSocket error:', e);
+        }
+    }
+
+    connect();
+}
+
+setInterval(fetchDiscordWidget, 15000);
+setInterval(() => {
+    if (latestLanyardUser) {
+        updateActivityBubble();
+    }
+}, 1000);
+</script>
+</body>
+</html>
